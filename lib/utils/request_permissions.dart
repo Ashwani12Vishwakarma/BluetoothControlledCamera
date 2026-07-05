@@ -5,7 +5,7 @@ Future<void> requestPermissions() async {
     Permission.bluetooth,
     Permission.bluetoothScan,
     Permission.bluetoothConnect,
-    Permission.location,
+    // Permission.location,
     Permission.camera,
     Permission.microphone,
   ].request();

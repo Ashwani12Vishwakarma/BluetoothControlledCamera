@@ -31,7 +31,7 @@ class BluetoothManager(private val context: Context) {
     }.start()
 }
 
-    private val bluetoothAdapter: BluetoothAdapter? =
+     val bluetoothAdapter: BluetoothAdapter? =
         BluetoothAdapter.getDefaultAdapter()
 
     private var serverSocket: BluetoothServerSocket? = null

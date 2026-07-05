@@ -138,6 +138,34 @@ class BluetoothController extends GetxController {
     }
   }
 
+  Future<bool> ensureBluetoothEnabled() async {
+    final enabled = await service.isBluetoothEnabled();
+
+    if (enabled) {
+      return true;
+    }
+
+    await service.enableBluetooth();
+
+    await Future.delayed(const Duration(seconds: 2));
+
+    return await service.isBluetoothEnabled();
+  }
+
+  Future<bool> checkBluetooth() async {
+    final enabled = await service.isBluetoothEnabled();
+
+    if (!enabled) {
+      Get.snackbar(
+        "Bluetooth Off",
+        "Please enable Bluetooth first.",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+
+    return enabled;
+  }
+
   Future<void> send(String cmd) async {
     final success = await service.sendCommand(cmd);
 

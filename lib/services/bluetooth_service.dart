@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/services.dart';
 
 class BluetoothService {
@@ -35,6 +37,14 @@ class BluetoothService {
       print("SEND ERROR: $e");
       return false;
     }
+  }
+
+  Future<void> enableBluetooth() async {
+    await _channel.invokeMethod("enableBluetooth");
+  }
+
+  Future<bool> isBluetoothEnabled() async {
+    return await _channel.invokeMethod("isBluetoothEnabled");
   }
 
   Future<bool> pairDevice(String address) async {

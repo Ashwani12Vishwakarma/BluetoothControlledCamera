@@ -7,6 +7,7 @@ import io.flutter.plugin.common.EventChannel
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.bluetooth.BluetoothAdapter
 import android.content.IntentFilter
 import android.bluetooth.BluetoothDevice
 
@@ -16,6 +17,7 @@ class MainActivity : FlutterActivity() {
 
     private var eventSink: EventChannel.EventSink? = null
     private lateinit var bluetoothManager: BluetoothManager
+
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -89,13 +91,30 @@ class MainActivity : FlutterActivity() {
                 }
 
                 "pairDevice" -> {
-                val address = call.argument<String>("address")
+                    val address = call.argument<String>("address")
                     if (address != null) {
                         val resultValue = bluetoothManager.pairDevice(address)
                         result.success(resultValue)
                     } else {
                         result.error("NO_ADDRESS", "Address missing", null)
                     }
+                }
+
+                "isBluetoothEnabled" -> {
+                    result.success(bluetoothManager.bluetoothAdapter!!.isEnabled)
+                }
+
+                "enableBluetooth" -> {
+
+                    if (!bluetoothManager.bluetoothAdapter!!.isEnabled) {
+
+                        val intent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+
+                        startActivity(intent)
+
+                    }
+
+                    result.success(true)
                 }
 
                 else -> result.notImplemented()

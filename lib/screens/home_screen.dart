@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:permission_handler/permission_handler.dart';
+import '../controllers/bluetooth_controller.dart';
 import 'receiver_screen.dart';
 import 'remote_screen.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  HomeScreen({super.key});
+
+  final bluetooth = Get.find<BluetoothController>();
 
   @override
   Widget build(BuildContext context) {
@@ -61,8 +65,33 @@ class HomeScreen extends StatelessWidget {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () {
-                              Get.to(() => const ReceiverScreen());
+                            onPressed: () async {
+                              final enabled = await bluetooth
+                                  .ensureBluetoothEnabled();
+                              if (!enabled) {
+                                Get.snackbar(
+                                  "Bluetooth Required",
+                                  "Turn on bluetooth first",
+                                );
+                                return;
+                              }
+                              final camera = await Permission.camera.request();
+                              final mic = await Permission.microphone.request();
+                              final videos = await Permission.videos.request();
+                              final storage = await Permission.storage
+                                  .request();
+
+                              if (camera.isGranted &&
+                                  mic.isGranted &&
+                                  videos.isGranted) {
+                                Get.to(() => const ReceiverScreen());
+                              } else {
+                                Get.snackbar(
+                                  "Permission Required",
+                                  "Camera and microphone permissions are required.",
+                                  snackPosition: SnackPosition.BOTTOM,
+                                );
+                              }
                             },
                             child: const Text("Open Receiver"),
                           ),
@@ -104,8 +133,30 @@ class HomeScreen extends StatelessWidget {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () {
-                              Get.to(() => const RemoteScreen());
+                            onPressed: () async {
+                              final enabled = await bluetooth
+                                  .ensureBluetoothEnabled();
+                              if (!enabled) {
+                                Get.snackbar(
+                                  "Bluetooth Required",
+                                  "Turn on bluetooth first",
+                                );
+                                return;
+                              }
+                              final scan = await Permission.bluetoothScan
+                                  .request();
+                              final connect = await Permission.bluetoothConnect
+                                  .request();
+
+                              if (scan.isGranted && connect.isGranted) {
+                                Get.to(() => const RemoteScreen());
+                              } else {
+                                Get.snackbar(
+                                  "Permission Required",
+                                  "Bluetooth permission is required.",
+                                  snackPosition: SnackPosition.BOTTOM,
+                                );
+                              }
                             },
                             child: const Text("Open Remote"),
                           ),
