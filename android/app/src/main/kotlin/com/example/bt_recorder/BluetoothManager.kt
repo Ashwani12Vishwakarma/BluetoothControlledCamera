@@ -47,8 +47,10 @@ class BluetoothManager(private val context: Context) {
 
     @SuppressLint("MissingPermission")
     fun startDiscovery() {
+        println("Ashwani:- START DISCOVERY CALLED")
         bluetoothAdapter?.cancelDiscovery()
         bluetoothAdapter?.startDiscovery()
+        println("Ashwani:- DISCOVERY STARTED")
     }
 
     fun scanDevices(): List<Map<String, String>> {

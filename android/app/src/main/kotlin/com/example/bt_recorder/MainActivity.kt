@@ -22,12 +22,16 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
-        bluetoothManager = BluetoothManager(this)
+            bluetoothManager = BluetoothManager(this)
 
-        registerReceiver(
-            discoveryReceiver,
-            IntentFilter(BluetoothDevice.ACTION_FOUND)
-        )   
+            val filter = IntentFilter().apply {
+            addAction(BluetoothDevice.ACTION_FOUND)
+            addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED)
+            addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
+        }
+
+        registerReceiver(discoveryReceiver, filter)
+
 
         bluetoothManager.onCommandReceived = { command ->
         println("FROM RECEIVER CALLBACK: $command")
@@ -123,30 +127,41 @@ class MainActivity : FlutterActivity() {
     }
 
     private val discoveryReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
+    override fun onReceive(context: Context?, intent: Intent?) {
 
-            when (intent?.action) {
-                BluetoothDevice.ACTION_FOUND -> {
+        when (intent?.action) {
 
-                    val device =
-                        intent.getParcelableExtra<BluetoothDevice>(
-                            BluetoothDevice.EXTRA_DEVICE
-                        )
+            BluetoothAdapter.ACTION_DISCOVERY_STARTED -> {
+                println("DISCOVERY STARTED")
+            }
 
-                    device?.let {
-                        val deviceMap = mapOf(
-                            "type" to "device",
-                            "name" to (it.name ?: "Unknown"),
-                            "address" to it.address,
-                            "bonded" to (it.bondState == BluetoothDevice.BOND_BONDED)
-                        )
+            BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
+                println("DISCOVERY FINISHED")
+            }
 
-                        runOnUiThread {
-                            eventSink?.success(deviceMap)   
-                        }
+            BluetoothDevice.ACTION_FOUND -> {
+
+                val device = intent.getParcelableExtra<BluetoothDevice>(
+                    BluetoothDevice.EXTRA_DEVICE
+                )
+
+                device?.let {
+
+                    println("DEVICE FOUND: ${it.name} ${it.address}")
+
+                    val deviceMap = mapOf(
+                        "type" to "device",
+                        "name" to (it.name ?: "Unknown"),
+                        "address" to it.address,
+                        "bonded" to (it.bondState == BluetoothDevice.BOND_BONDED)
+                    )
+
+                    runOnUiThread {
+                        eventSink?.success(deviceMap)
                     }
                 }
             }
         }
     }
+}
 }

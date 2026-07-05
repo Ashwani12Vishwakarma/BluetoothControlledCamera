@@ -66,6 +66,7 @@ class HomeScreen extends StatelessWidget {
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: () async {
+
                               final enabled = await bluetooth
                                   .ensureBluetoothEnabled();
                               if (!enabled) {
@@ -75,6 +76,11 @@ class HomeScreen extends StatelessWidget {
                                 );
                                 return;
                               }
+
+                              final scan = await Permission.bluetoothScan
+                                  .request();
+                              final connect = await Permission.bluetoothConnect
+                                  .request();
                               final camera = await Permission.camera.request();
                               final mic = await Permission.microphone.request();
                               final videos = await Permission.videos.request();
@@ -83,7 +89,9 @@ class HomeScreen extends StatelessWidget {
 
                               if (camera.isGranted &&
                                   mic.isGranted &&
-                                  videos.isGranted) {
+                                  videos.isGranted &&
+                                  scan.isGranted &&
+                                  connect.isGranted) {
                                 Get.to(() => const ReceiverScreen());
                               } else {
                                 Get.snackbar(
@@ -134,8 +142,8 @@ class HomeScreen extends StatelessWidget {
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: () async {
-                              final enabled = await bluetooth
-                                  .ensureBluetoothEnabled();
+                              final enabled = await bluetooth.ensureBluetoothEnabled();
+
                               if (!enabled) {
                                 Get.snackbar(
                                   "Bluetooth Required",
