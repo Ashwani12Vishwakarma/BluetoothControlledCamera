@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/services.dart';
 
 class BluetoothService {
@@ -52,6 +50,14 @@ class BluetoothService {
       "address": address,
     });
     return result;
+  }
+
+  Future<void> openLocationSettings() async {
+    await _channel.invokeMethod("openLocationSettings");
+  }
+
+  Future<bool> isLocationEnabled() async {
+    return await _channel.invokeMethod("isLocationEnabled");
   }
   
 }

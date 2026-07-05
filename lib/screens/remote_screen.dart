@@ -106,6 +106,9 @@ class _RemoteScreenState extends State<RemoteScreen> {
                         icon: const Icon(Icons.search),
                         label: const Text("Scan Nearby Devices"),
                         onPressed: () async {
+                          if (!await controller.ensureLocationEnabled()) {
+                            return;
+                          }
                           await controller.startDiscovery();
                         },
                       ),

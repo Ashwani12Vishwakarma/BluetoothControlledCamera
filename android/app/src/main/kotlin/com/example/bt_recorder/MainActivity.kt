@@ -10,6 +10,7 @@ import android.content.Intent
 import android.bluetooth.BluetoothAdapter
 import android.content.IntentFilter
 import android.bluetooth.BluetoothDevice
+import android.provider.Settings
 
 class MainActivity : FlutterActivity() {
      private val CHANNEL = "bluetooth_channel"
@@ -108,6 +109,18 @@ class MainActivity : FlutterActivity() {
                     result.success(bluetoothManager.bluetoothAdapter!!.isEnabled)
                 }
 
+                "isLocationEnabled" -> {
+
+                    val locationManager =
+                        getSystemService(Context.LOCATION_SERVICE) as android.location.LocationManager
+
+                    val enabled =
+                        locationManager.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER) ||
+                        locationManager.isProviderEnabled(android.location.LocationManager.NETWORK_PROVIDER)
+
+                    result.success(enabled)
+                }
+
                 "enableBluetooth" -> {
 
                     if (!bluetoothManager.bluetoothAdapter!!.isEnabled) {
@@ -117,6 +130,14 @@ class MainActivity : FlutterActivity() {
                         startActivity(intent)
 
                     }
+
+                    result.success(true)
+                }
+
+                "openLocationSettings" -> {
+
+                    val intent = Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                    startActivity(intent)
 
                     result.success(true)
                 }

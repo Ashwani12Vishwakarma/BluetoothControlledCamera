@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:get/get.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/bluetooth_service.dart';
 
@@ -138,18 +139,59 @@ class BluetoothController extends GetxController {
     }
   }
 
-  Future<bool> ensureBluetoothEnabled() async {
-    final enabled = await service.isBluetoothEnabled();
+  Future<bool> ensureLocationEnabled() async {
+    final permission = await Permission.location.request();
 
-    if (enabled) {
+    if (!permission.isGranted) {
+      Get.snackbar(
+        "Location Permission",
+        "Please allow Location permission.",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+
+      return false;
+    }
+
+    final enabled = await service.isLocationEnabled();
+
+    if (!enabled) {
+      Get.defaultDialog(
+        title: "Location Required",
+        middleText:
+            "Nearby Bluetooth scanning requires Location Services to be enabled.",
+        textConfirm: "Open Settings",
+        textCancel: "Cancel",
+        onConfirm: () async {
+          Get.back();
+          await service.openLocationSettings();
+        },
+      );
+
+      return false;
+    }
+
+    return true;
+  }
+
+  Future<bool> ensureBluetoothEnabled() async {
+    final connect = await Permission.bluetoothConnect.request();
+
+    if (!connect.isGranted) {
+      Get.snackbar(
+        "Permission Required",
+        "Bluetooth Connect permission is required.",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    }
+
+    if (await service.isBluetoothEnabled()) {
       return true;
     }
 
     await service.enableBluetooth();
 
-    await Future.delayed(const Duration(seconds: 2));
-
-    return await service.isBluetoothEnabled();
+    return false;
   }
 
   Future<bool> checkBluetooth() async {
