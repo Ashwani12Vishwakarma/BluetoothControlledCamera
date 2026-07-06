@@ -37,6 +37,18 @@ class BluetoothService {
     }
   }
 
+  Future<bool> sendFile(String filePath) async {
+    try {
+      final result = await _channel.invokeMethod("sendFile", {
+        "filePath": filePath,
+      });
+      return result == true;
+    } catch (e) {
+      print("SEND FILE ERROR: $e");
+      return false;
+    }
+  }
+
   Future<void> enableBluetooth() async {
     await _channel.invokeMethod("enableBluetooth");
   }
@@ -59,5 +71,12 @@ class BluetoothService {
   Future<bool> isLocationEnabled() async {
     return await _channel.invokeMethod("isLocationEnabled");
   }
-  
+
+  Future<void> playVideo(String filePath) async {
+    try {
+      await _channel.invokeMethod("playVideo", {"filePath": filePath});
+    } catch (e) {
+      print("PLAY VIDEO ERROR: $e");
+    }
+  }
 }

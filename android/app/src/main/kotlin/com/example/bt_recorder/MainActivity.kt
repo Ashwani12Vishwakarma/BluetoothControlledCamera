@@ -95,6 +95,34 @@ class MainActivity : FlutterActivity() {
                     }
                 }
 
+                "sendFile" -> {
+                    val filePath = call.argument<String>("filePath")
+                    if (filePath != null) {
+                        Thread {
+                            val success = bluetoothManager.sendFile(filePath) { progress ->
+                                runOnUiThread {
+                                    eventSink?.success("SEND_PROGRESS|$progress")
+                                }
+                            }
+                            runOnUiThread {
+                                result.success(success)
+                            }
+                        }.start()
+                    } else {
+                        result.error("NO_FILEPATH", "File path missing", null)
+                    }
+                }
+
+                "playVideo" -> {
+                    val filePath = call.argument<String>("filePath")
+                    if (filePath != null) {
+                        playVideo(filePath)
+                        result.success(true)
+                    } else {
+                        result.error("NO_FILEPATH", "File path missing", null)
+                    }
+                }
+
                 "pairDevice" -> {
                     val address = call.argument<String>("address")
                     if (address != null) {
@@ -148,41 +176,63 @@ class MainActivity : FlutterActivity() {
     }
 
     private val discoveryReceiver = object : BroadcastReceiver() {
-    override fun onReceive(context: Context?, intent: Intent?) {
+        override fun onReceive(context: Context?, intent: Intent?) {
 
-        when (intent?.action) {
+            when (intent?.action) {
 
-            BluetoothAdapter.ACTION_DISCOVERY_STARTED -> {
-                println("DISCOVERY STARTED")
-            }
+                BluetoothAdapter.ACTION_DISCOVERY_STARTED -> {
+                    println("DISCOVERY STARTED")
+                }
 
-            BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
-                println("DISCOVERY FINISHED")
-            }
+                BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
+                    println("DISCOVERY FINISHED")
+                }
 
-            BluetoothDevice.ACTION_FOUND -> {
+                BluetoothDevice.ACTION_FOUND -> {
 
-                val device = intent.getParcelableExtra<BluetoothDevice>(
-                    BluetoothDevice.EXTRA_DEVICE
-                )
-
-                device?.let {
-
-                    println("DEVICE FOUND: ${it.name} ${it.address}")
-
-                    val deviceMap = mapOf(
-                        "type" to "device",
-                        "name" to (it.name ?: "Unknown"),
-                        "address" to it.address,
-                        "bonded" to (it.bondState == BluetoothDevice.BOND_BONDED)
+                    val device = intent.getParcelableExtra<BluetoothDevice>(
+                        BluetoothDevice.EXTRA_DEVICE
                     )
 
-                    runOnUiThread {
-                        eventSink?.success(deviceMap)
+                    device?.let {
+
+                        println("DEVICE FOUND: ${it.name} ${it.address}")
+
+                        val deviceMap = mapOf(
+                            "type" to "device",
+                            "name" to (it.name ?: "Unknown"),
+                            "address" to it.address,
+                            "bonded" to (it.bondState == BluetoothDevice.BOND_BONDED)
+                        )
+
+                        runOnUiThread {
+                            eventSink?.success(deviceMap)
+                        }
                     }
                 }
             }
         }
     }
-}
-}
+
+    private fun playVideo(filePath: String) {
+        try {
+            val file = java.io.File(filePath)
+            if (!file.exists()) {
+                println("File not found: $filePath")
+                return
+            }
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                this,
+                "${packageName}.fileprovider",
+                file
+            )
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "video/mp4")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+}

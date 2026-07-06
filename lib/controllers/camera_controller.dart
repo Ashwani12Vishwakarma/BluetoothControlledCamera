@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:camera/camera.dart';
 import 'package:gal/gal.dart';
 import 'package:get/get.dart';
+import 'bluetooth_controller.dart';
 // import 'dart:io';
 // import 'package:path/path.dart' as p;
 // import 'package:path_provider/path_provider.dart';
@@ -118,15 +119,15 @@ class CameraControllerX extends GetxController {
     }
   }
 
-  Future<void> stopRecording() async {
+  Future<String?> stopRecording() async {
     try {
       print("STOP RECORDING CALLED");
 
-      if (cameraController == null) return;
+      if (cameraController == null) return null;
 
       if (!cameraController!.value.isRecordingVideo) {
         print("Not recording");
-        return;
+        return null;
       }
 
       final recordedFile = await cameraController!.stopVideoRecording();
@@ -142,8 +143,15 @@ class CameraControllerX extends GetxController {
       timer?.cancel();
       seconds.value = 0;
       isRecording.value = false;
+
+      // Copy the recorded file persistently on the Receiver device as well
+      final btController = Get.find<BluetoothController>();
+      final persistentPath = await btController.saveVideoToPersistentStorage(recordedFile.path);
+
+      return persistentPath;
     } catch (e) {
       print("STOP ERROR: $e");
+      return null;
     }
   }
 

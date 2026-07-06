@@ -4,6 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../controllers/bluetooth_controller.dart';
 import 'receiver_screen.dart';
 import 'remote_screen.dart';
+import 'recorded_videos_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
@@ -13,7 +14,16 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Bluetooth Camera Remote")),
+      appBar: AppBar(
+        title: const Text("Bluetooth Camera Remote"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.video_library),
+            tooltip: "Recorded Videos",
+            onPressed: () => Get.to(() => const RecordedVideosScreen()),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -84,8 +94,7 @@ class HomeScreen extends StatelessWidget {
                               final camera = await Permission.camera.request();
                               final mic = await Permission.microphone.request();
                               final videos = await Permission.videos.request();
-                              final storage = await Permission.storage
-                                  .request();
+                              await Permission.storage.request();
 
                               if (camera.isGranted &&
                                   mic.isGranted &&

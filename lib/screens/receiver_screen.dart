@@ -28,7 +28,10 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
       if (command == "START") {
         await cameraController.startRecording();
       } else if (command == "STOP") {
-        await cameraController.stopRecording();
+        final filePath = await cameraController.stopRecording();
+        if (filePath != null) {
+          controller.sendFile(filePath);
+        }
       } else if (command == "FLASH_ON") {
         await cameraController.flashOn();
       } else if (command == "FLASH_OFF") {
@@ -63,110 +66,144 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
           return const Center(child: CircularProgressIndicator());
         }
 
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Card(
-                  elevation: 4,
-                  child: Padding(
-                    padding: const EdgeInsets.all(15),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: controller.isConnected.value
-                              ? Colors.green
-                              : Colors.orange,
-                          child: Icon(
-                            controller.isConnected.value
-                                ? Icons.bluetooth_connected
-                                : Icons.bluetooth_searching,
-                            color: Colors.white,
-                          ),
-                        ),
-
-                        const SizedBox(width: 15),
-
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                "Bluetooth Status",
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-
-                              Text(controller.status.value),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 15),
-
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: CameraPreview(cameraController.cameraController!),
-                  ),
-                ),
-
-                const SizedBox(height: 15),
-
-                Card(
-                  elevation: 4,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        Text(
-                          cameraController.isRecording.value
-                              ? "🔴 RECORDING"
-                              : "⚪ READY",
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-
-                        const SizedBox(height: 10),
-
-                        Text(
-                          cameraController.formattedTime,
-                          style: const TextStyle(
-                            fontSize: 34,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-
-                        const Divider(),
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return Stack(
+          children: [
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Card(
+                      elevation: 4,
+                      child: Padding(
+                        padding: const EdgeInsets.all(15),
+                        child: Row(
                           children: [
-                            const Text(
-                              "Last Command",
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                            CircleAvatar(
+                              backgroundColor: controller.isConnected.value
+                                  ? Colors.green
+                                  : Colors.orange,
+                              child: Icon(
+                                controller.isConnected.value
+                                    ? Icons.bluetooth_connected
+                                    : Icons.bluetooth_searching,
+                                color: Colors.white,
+                              ),
                             ),
 
-                            Text(
-                              controller.lastCommand.value.isEmpty
-                                  ? "--"
-                                  : controller.lastCommand.value,
+                            const SizedBox(width: 15),
+
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "Bluetooth Status",
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+
+                                  Text(controller.status.value),
+                                ],
+                              ),
                             ),
                           ],
                         ),
-                      ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(15),
+                        child: CameraPreview(cameraController.cameraController!),
+                      ),
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    Card(
+                      elevation: 4,
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          children: [
+                            Text(
+                              cameraController.isRecording.value
+                                  ? "🔴 RECORDING"
+                                  : "⚪ READY",
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+
+                            const SizedBox(height: 10),
+
+                            Text(
+                              cameraController.formattedTime,
+                              style: const TextStyle(
+                                fontSize: 34,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+
+                            const Divider(),
+
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  "Last Command",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+
+                                Text(
+                                  controller.lastCommand.value.isEmpty
+                                      ? "--"
+                                      : controller.lastCommand.value,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (controller.isTransferring.value)
+              Container(
+                color: Colors.black54,
+                child: Center(
+                  child: Card(
+                    margin: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const CircularProgressIndicator(),
+                          const SizedBox(height: 20),
+                          Text(
+                            controller.transferStatus.value,
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 10),
+                          LinearProgressIndicator(
+                            value: controller.transferProgress.value / 100.0,
+                          ),
+                          const SizedBox(height: 8),
+                          Text("${controller.transferProgress.value}%"),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
+              ),
+          ],
         );
       }),
     );

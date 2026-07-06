@@ -340,6 +340,41 @@ class _RemoteScreenState extends State<RemoteScreen> {
               ),
             );
           }),
+          Obx(() {
+            if (!controller.isTransferring.value) {
+              return const SizedBox();
+            }
+
+            return Container(
+              color: Colors.black54,
+              child: Center(
+                child: Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CircularProgressIndicator(),
+                        const SizedBox(height: 20),
+                        Text(
+                          controller.transferStatus.value,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 10),
+                        LinearProgressIndicator(
+                          value: controller.transferProgress.value / 100.0,
+                        ),
+                        const SizedBox(height: 8),
+                        Text("${controller.transferProgress.value}%"),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
         ],
       ),
     );
