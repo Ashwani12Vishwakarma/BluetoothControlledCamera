@@ -254,11 +254,16 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
                                   "Last Command",
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
-
-                                Text(
-                                  controller.lastCommand.value.isEmpty
-                                      ? "--"
-                                      : controller.lastCommand.value,
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    controller.lastCommand.value.isEmpty
+                                        ? "--"
+                                        : controller.lastCommand.value,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.right,
+                                  ),
                                 ),
                               ],
                             ),

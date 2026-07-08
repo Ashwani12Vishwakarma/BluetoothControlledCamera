@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/bluetooth_controller.dart';
 import '../controllers/script_controller.dart';
+import '../models/teleprompter_script.dart';
 
 class RemoteScreen extends StatefulWidget {
   const RemoteScreen({super.key});
@@ -14,8 +15,7 @@ class RemoteScreen extends StatefulWidget {
 class _RemoteScreenState extends State<RemoteScreen> {
   final controller = Get.find<BluetoothController>();
 
-  final titleController = TextEditingController();
-  final scriptController = TextEditingController();
+  TeleprompterScript? selectedScript;
   final scriptData = Get.put(ScriptController());
 
   @override
@@ -28,8 +28,6 @@ class _RemoteScreenState extends State<RemoteScreen> {
 
   @override
   void dispose() {
-    titleController.dispose();
-    scriptController.dispose();
     super.dispose();
   }
 
@@ -365,12 +363,11 @@ class _RemoteScreenState extends State<RemoteScreen> {
                                     label: const Text("Saved Scripts"),
                                     onPressed: () {
                                       Get.to(() => const ScriptsScreen())?.then(
-                                        (selectedScript) {
-                                          if (selectedScript != null) {
-                                            titleController.text =
-                                                selectedScript.title;
-                                            scriptController.text =
-                                                selectedScript.content;
+                                        (script) {
+                                          if (script != null) {
+                                            setState(() {
+                                              selectedScript = script;
+                                            });
                                           }
                                         },
                                       );
@@ -379,69 +376,59 @@ class _RemoteScreenState extends State<RemoteScreen> {
                                 ],
                               ),
                               const SizedBox(height: 12),
-                              TextField(
-                                controller: titleController,
-                                decoration: const InputDecoration(
-                                  labelText: "Title",
-                                  border: OutlineInputBorder(),
+                              if (selectedScript != null) ...[
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Selected: ${selectedScript!.title}",
+                                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        selectedScript!.content,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(color: Colors.black54),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 12),
-                              TextField(
-                                controller: scriptController,
-                                maxLines: 5,
-                                decoration: const InputDecoration(
-                                  labelText: "Script",
-                                  border: OutlineInputBorder(),
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton.icon(
-                                  icon: const Icon(Icons.send),
-                                  label: const Text("Send Script to Receiver"),
-                                  onPressed: () {
-                                    final t = titleController.text.trim();
-                                    final s = scriptController.text.trim();
-                                    if (t.isNotEmpty || s.isNotEmpty) {
-                                      final escapedScript = s.replaceAll(
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    icon: const Icon(Icons.send),
+                                    label: const Text("Send Script to Receiver"),
+                                    onPressed: () {
+                                      final escapedScript = selectedScript!.content.replaceAll(
                                         '\n',
                                         '<br>',
                                       );
                                       controller.send(
-                                        "PROMPTER_TEXT|$t|$escapedScript",
+                                        "PROMPTER_TEXT|${selectedScript!.title}|$escapedScript",
                                       );
-                                    }
-                                  },
+                                    },
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 12),
-                              SizedBox(
-                                width: double.infinity,
-                                child: OutlinedButton.icon(
-                                  icon: const Icon(Icons.save),
-                                  label: const Text("Save Current Script"),
-                                  onPressed: () {
-                                    final t = titleController.text.trim();
-                                    final s = scriptController.text.trim();
-                                    if (t.isNotEmpty && s.isNotEmpty) {
-                                      scriptData.addScript(t, s);
-                                      Get.snackbar(
-                                        "Saved",
-                                        "Script saved successfully",
-                                        snackPosition: SnackPosition.BOTTOM,
-                                      );
-                                    } else {
-                                      Get.snackbar(
-                                        "Error",
-                                        "Title and Script cannot be empty",
-                                        snackPosition: SnackPosition.BOTTOM,
-                                      );
-                                    }
-                                  },
+                              ] else
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 20),
+                                  child: Center(
+                                    child: Text(
+                                      "No script selected.\nPlease select a script to send to receiver.",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(color: Colors.grey),
+                                    ),
+                                  ),
                                 ),
-                              ),
                               const SizedBox(height: 12),
                               if (controller.isPrompterActive.value)
                                 Column(
