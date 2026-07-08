@@ -25,10 +25,14 @@ class _RecordedVideosScreenState extends State<RecordedVideosScreen> {
   Future<void> _loadVideos() async {
     setState(() => isLoading = true);
     try {
-      final folder = await controller.getPersistentVideoFolder();
+      final folder = await controller.getPersistentMediaFolder();
       final items = folder
           .listSync()
-          .where((item) => item is File && item.path.toLowerCase().endsWith('.mp4'))
+          .where((item) =>
+              item is File &&
+              (item.path.toLowerCase().endsWith('.mp4') ||
+               item.path.toLowerCase().endsWith('.jpg') ||
+               item.path.toLowerCase().endsWith('.jpeg')))
           .cast<File>()
           .toList();
 
@@ -39,7 +43,7 @@ class _RecordedVideosScreenState extends State<RecordedVideosScreen> {
         videoFiles = items;
       });
     } catch (e) {
-      print("Error loading videos: $e");
+      print("Error loading media: $e");
     } finally {
       setState(() => isLoading = false);
     }
@@ -59,8 +63,8 @@ class _RecordedVideosScreenState extends State<RecordedVideosScreen> {
 
   Future<void> _deleteVideo(File file) async {
     final confirmed = await Get.defaultDialog<bool>(
-      title: "Delete Video",
-      middleText: "Are you sure you want to delete this video file from this device?",
+      title: "Delete File",
+      middleText: "Are you sure you want to delete this file from this device?",
       textConfirm: "Delete",
       textCancel: "Cancel",
       confirmTextColor: Colors.white,
@@ -73,7 +77,7 @@ class _RecordedVideosScreenState extends State<RecordedVideosScreen> {
         if (await file.exists()) {
           await file.delete();
           _loadVideos();
-          Get.snackbar("Deleted", "Video deleted successfully", snackPosition: SnackPosition.BOTTOM);
+          Get.snackbar("Deleted", "File deleted successfully", snackPosition: SnackPosition.BOTTOM);
         }
       } catch (e) {
         Get.snackbar("Error", "Failed to delete file: $e", snackPosition: SnackPosition.BOTTOM);
@@ -85,7 +89,7 @@ class _RecordedVideosScreenState extends State<RecordedVideosScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Recorded Videos"),
+        title: const Text("Recorded Media"),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -108,7 +112,7 @@ class _RecordedVideosScreenState extends State<RecordedVideosScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          "No videos found",
+                          "No media found",
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -117,7 +121,7 @@ class _RecordedVideosScreenState extends State<RecordedVideosScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "Recorded or received videos will appear here.",
+                          "Recorded or received media will appear here.",
                           style: TextStyle(color: Colors.grey.shade500),
                         ),
                       ],
@@ -132,6 +136,8 @@ class _RecordedVideosScreenState extends State<RecordedVideosScreen> {
                       final stat = file.statSync();
                       final size = _formatFileSize(stat.size);
                       final date = _formatDateTime(stat.modified);
+
+                      final isVideo = file.path.toLowerCase().endsWith('.mp4');
 
                       return Card(
                         elevation: 2,
@@ -148,9 +154,9 @@ class _RecordedVideosScreenState extends State<RecordedVideosScreen> {
                               color: Colors.blue.shade50,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Center(
+                            child: Center(
                               child: Icon(
-                                Icons.play_circle_fill,
+                                isVideo ? Icons.play_circle_fill : Icons.image,
                                 color: Colors.blue,
                                 size: 36,
                               ),
@@ -173,7 +179,7 @@ class _RecordedVideosScreenState extends State<RecordedVideosScreen> {
                             icon: const Icon(Icons.delete, color: Colors.redAccent),
                             onPressed: () => _deleteVideo(file),
                           ),
-                          onTap: () => controller.playVideo(file.path),
+                          onTap: () => controller.playMedia(file.path),
                         ),
                       );
                     },

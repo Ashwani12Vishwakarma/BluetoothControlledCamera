@@ -146,7 +146,7 @@ class CameraControllerX extends GetxController {
 
       // Copy the recorded file persistently on the Receiver device as well
       final btController = Get.find<BluetoothController>();
-      final persistentPath = await btController.saveVideoToPersistentStorage(recordedFile.path);
+      final persistentPath = await btController.saveMediaToPersistentStorage(recordedFile.path);
 
       return persistentPath;
     } catch (e) {
@@ -162,6 +162,32 @@ class CameraControllerX extends GetxController {
     timer = Timer.periodic(const Duration(seconds: 1), (_) {
       seconds.value++;
     });
+  }
+
+  Future<String?> captureImage() async {
+    try {
+      print("CAPTURE IMAGE CALLED");
+
+      if (cameraController == null) return null;
+      if (cameraController!.value.isRecordingVideo) {
+        print("Cannot capture image while recording");
+        return null;
+      }
+
+      final xFile = await cameraController!.takePicture();
+      print("Captured image: ${xFile.path}");
+
+      await Gal.putImage(xFile.path);
+      print("IMAGE SAVED TO GALLERY");
+
+      final btController = Get.find<BluetoothController>();
+      final persistentPath = await btController.saveMediaToPersistentStorage(xFile.path);
+
+      return persistentPath;
+    } catch (e) {
+      print("CAPTURE IMAGE ERROR: $e");
+      return null;
+    }
   }
 
   Future<void> flashOn() async {

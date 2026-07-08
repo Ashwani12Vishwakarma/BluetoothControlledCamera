@@ -67,7 +67,7 @@ class BluetoothController extends GetxController {
         final parts = cmd.split("|");
         isTransferring.value = true;
         transferProgress.value = 0;
-        transferStatus.value = "Receiving video file: ${parts.length > 1 ? parts[1] : ''}...";
+        transferStatus.value = "Receiving file: ${parts.length > 1 ? parts[1] : ''}...";
         return;
       } else if (cmd.startsWith("FILE_TRANSFER_PROGRESS|")) {
         final parts = cmd.split("|");
@@ -80,10 +80,10 @@ class BluetoothController extends GetxController {
         final parts = cmd.split("|");
         isTransferring.value = false;
         transferProgress.value = 100;
-        transferStatus.value = "Received video file successfully";
+        transferStatus.value = "Received file successfully";
         if (parts.length > 1) {
           final localPath = parts[1];
-          _saveReceivedVideo(localPath);
+          _saveReceivedFile(localPath);
         }
         return;
       } else if (cmd.startsWith("FILE_TRANSFER_FAILED|")) {
@@ -92,7 +92,7 @@ class BluetoothController extends GetxController {
         transferStatus.value = "Transfer failed";
         Get.snackbar(
           "Error",
-          "Video transfer failed: ${parts.length > 1 ? parts[1] : ''}",
+          "File transfer failed: ${parts.length > 1 ? parts[1] : ''}",
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red.withValues(alpha: 0.8),
           colorText: Colors.white,
@@ -103,7 +103,7 @@ class BluetoothController extends GetxController {
         if (parts.length > 1) {
           isTransferring.value = true;
           transferProgress.value = int.tryParse(parts[1]) ?? 0;
-          transferStatus.value = "Sending video: ${transferProgress.value}%";
+          transferStatus.value = "Sending file: ${transferProgress.value}%";
         }
         return;
       } else if (cmd == "DISCONNECTED") {
@@ -141,6 +141,14 @@ class BluetoothController extends GetxController {
 
         case "FLASH_OFF":
           isFlashOn.value = false;
+          break;
+
+        case "CAPTURE_IMAGE":
+          Get.snackbar(
+            "Success",
+            "Image saved successfully",
+            snackPosition: SnackPosition.BOTTOM,
+          );
           break;
       }
 
@@ -412,50 +420,49 @@ class BluetoothController extends GetxController {
     }
   }
 
-  /// Returns the persistent folder for recorded videos.
-  /// Uses external app-private storage so media players can open files directly.
-  Future<Directory> getPersistentVideoFolder() async {
+  Future<Directory> getPersistentMediaFolder() async {
     // getExternalStorageDirectory() → /sdcard/Android/data/<pkg>/files/
     // Files here are accessible by external media players via file:// URI.
     Directory? extDir = await getExternalStorageDirectory();
     extDir ??= await getApplicationDocumentsDirectory(); // fallback
-    final videoDir = Directory('${extDir.path}/recorded_videos');
-    if (!await videoDir.exists()) {
-      await videoDir.create(recursive: true);
+    final mediaDir = Directory('${extDir.path}/recorded_media');
+    if (!await mediaDir.exists()) {
+      await mediaDir.create(recursive: true);
     }
-    return videoDir;
+    return mediaDir;
   }
 
-  Future<String> saveVideoToPersistentStorage(String tempPath) async {
+  Future<String> saveMediaToPersistentStorage(String tempPath) async {
     try {
-      final videoDir = await getPersistentVideoFolder();
+      final mediaDir = await getPersistentMediaFolder();
       final fileName = tempPath.split('/').last;
-      final newPath = '${videoDir.path}/$fileName';
+      final newPath = '${mediaDir.path}/$fileName';
       final file = File(tempPath);
       if (await file.exists()) {
         await file.copy(newPath);
-        print("Copied video to persistent path: $newPath");
+        print("Copied media to persistent path: $newPath");
         return newPath;
       }
     } catch (e) {
-      print("Error saving video persistently: $e");
+      print("Error saving media persistently: $e");
     }
     return tempPath;
   }
 
-  /// Opens the video file using the platform's default video player app.
-  Future<void> playVideo(String filePath) async {
+  /// Opens the file using the platform's default media player app.
+  Future<void> playMedia(String filePath) async {
     try {
       final file = File(filePath);
       if (!await file.exists()) {
         Get.snackbar(
           "File Not Found",
-          "The video file could not be found.",
+          "The file could not be found.",
           snackPosition: SnackPosition.BOTTOM,
         );
         return;
       }
-      final result = await OpenFile.open(filePath, type: "video/mp4");
+      final isVideo = filePath.toLowerCase().endsWith('.mp4');
+      final result = await OpenFile.open(filePath, type: isVideo ? "video/mp4" : "image/jpeg");
       if (result.type != ResultType.done) {
         Get.snackbar(
           "Playback Error",
@@ -464,47 +471,53 @@ class BluetoothController extends GetxController {
         );
       }
     } catch (e) {
-      print("PLAY VIDEO ERROR: $e");
+      print("PLAY MEDIA ERROR: $e");
       Get.snackbar(
         "Error",
-        "Could not open video: $e",
+        "Could not open file: $e",
         snackPosition: SnackPosition.BOTTOM,
       );
     }
   }
 
-  Future<void> _saveReceivedVideo(String localPath) async {
+  Future<void> _saveReceivedFile(String localPath) async {
     try {
+      final isVideo = localPath.toLowerCase().endsWith('.mp4');
       final hasAccess = await Gal.hasAccess();
       if (!hasAccess) {
         await Gal.requestAccess();
       }
-      await Gal.putVideo(localPath);
+
+      if (isVideo) {
+        await Gal.putVideo(localPath);
+      } else {
+        await Gal.putImage(localPath);
+      }
 
       // Copy the file to local persistent storage for the list screen
-      final persistentPath = await saveVideoToPersistentStorage(localPath);
+      final persistentPath = await saveMediaToPersistentStorage(localPath);
 
       // Show the choice dialog to the user on the Remote Controller
       Get.dialog(
         AlertDialog(
-          title: const Text("Video Received"),
-          content: const Text(
-            "The recorded video has been successfully transferred to this device. What would you like to do?",
+          title: Text(isVideo ? "Video Received" : "Image Received"),
+          content: Text(
+            "The recorded ${isVideo ? 'video' : 'image'} has been successfully transferred to this device. What would you like to do?",
           ),
           actions: [
             TextButton(
               onPressed: () {
                 Get.back();
-                playVideo(persistentPath);
+                playMedia(persistentPath);
               },
-              child: const Text("Play Video"),
+              child: Text(isVideo ? "Play Video" : "View Image"),
             ),
             TextButton(
               onPressed: () {
                 Get.back();
                 Get.to(() => const RecordedVideosScreen());
               },
-              child: const Text("Show All Videos"),
+              child: const Text("Show All Media"),
             ),
             TextButton(
               onPressed: () {
@@ -517,10 +530,10 @@ class BluetoothController extends GetxController {
         barrierDismissible: false,
       );
     } catch (e) {
-      print("SAVE VIDEO ERROR: $e");
+      print("SAVE FILE ERROR: $e");
       Get.snackbar(
         "Save Failed",
-        "Failed to save video: $e",
+        "Failed to save file: $e",
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.withValues(alpha: 0.8),
         colorText: Colors.white,

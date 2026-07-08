@@ -40,6 +40,11 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
         await cameraController.switchCamera(true);
       } else if (command == "CAMERA_REAR") {
         await cameraController.switchCamera(false);
+      } else if (command == "CAPTURE_IMAGE") {
+        final filePath = await cameraController.captureImage();
+        if (filePath != null) {
+          controller.sendFile(filePath);
+        }
       }
     };
 

@@ -19,7 +19,7 @@ class HomeScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.video_library),
-            tooltip: "Recorded Videos",
+            tooltip: "Recorded Media",
             onPressed: () => Get.to(() => const RecordedVideosScreen()),
           ),
         ],

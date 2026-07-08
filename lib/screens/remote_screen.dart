@@ -255,6 +255,21 @@ class _RemoteScreenState extends State<RemoteScreen> {
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton.icon(
+                                  icon: const Icon(Icons.camera_alt),
+                                  label: const Text("Capture Image"),
+                                  onPressed: controller.isRecording.value
+                                      ? null
+                                      : () {
+                                          controller.send("CAPTURE_IMAGE");
+                                        },
+                                ),
+                              ),
+
+                              const SizedBox(height: 12),
+
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
                                   icon: Icon(
                                     controller.isFlashOn.value
                                         ? Icons.flash_off
