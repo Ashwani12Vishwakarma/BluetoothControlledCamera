@@ -27,6 +27,7 @@ class BluetoothController extends GetxController {
   RxString prompterText = "".obs;
   RxBool isPrompterActive = false.obs;
   RxBool isPrompterPlaying = false.obs;
+  RxDouble prompterSpeed = 1.5.obs;
 
   // 0 = Rear
   // 1 = Front
@@ -45,8 +46,11 @@ class BluetoothController extends GetxController {
 
   Function(String command)? onCommand;
 
+  StreamSubscription? _commandSubscription;
+
   void listenCommands() {
-    service.commandStream().listen((event) {
+    _commandSubscription?.cancel();
+    _commandSubscription = service.commandStream().listen((event) {
       print("RAW EVENT: $event");
 
       if (event is Map) {
@@ -213,6 +217,27 @@ class BluetoothController extends GetxController {
       print(e);
     } finally {
       isConnecting.value = false;
+    }
+  }
+
+  Future<void> disconnect() async {
+    try {
+      if (isRecording.value) {
+        send("STOP");
+      }
+      if (isPrompterActive.value) {
+        send("PROMPTER_CLEAR");
+      }
+      
+      // Give a tiny moment for commands to flush over Bluetooth
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      await service.disconnect();
+      
+      isConnected.value = false;
+      status.value = "⚪ Disconnected";
+    } catch (e) {
+      print("DISCONNECT ERROR: $e");
     }
   }
 
@@ -383,6 +408,10 @@ class BluetoothController extends GetxController {
   }
 
   Future<void> autoReconnect() async {
+    if (isConnected.value) {
+      return; // Already connected
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final address = prefs.getString("last_device");
 

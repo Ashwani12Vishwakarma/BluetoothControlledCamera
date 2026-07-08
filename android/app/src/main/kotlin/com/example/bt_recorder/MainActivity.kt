@@ -73,9 +73,12 @@ class MainActivity : FlutterActivity() {
 
                 "connect" -> {
                     val address = call.argument<String>("address")
-                    result.success(
-                        bluetoothManager.connect(address!!)
-                    )
+                    Thread {
+                        val res = bluetoothManager.connect(address!!)
+                        runOnUiThread {
+                            result.success(res)
+                        }
+                    }.start()
                 }
 
                 "startDiscovery" -> {
@@ -83,13 +86,20 @@ class MainActivity : FlutterActivity() {
                     result.success(null)
                 }
 
+                "disconnect" -> {
+                    bluetoothManager.disconnect()
+                    result.success(true)
+                }
+
                 "sendCommand" -> {
-
                     val command = call.argument<String>("command")
-
                     if (command != null) {
-                        val sent = bluetoothManager.sendCommand(command)
-                        result.success(sent)
+                        Thread {
+                            val sent = bluetoothManager.sendCommand(command)
+                            runOnUiThread {
+                                result.success(sent)
+                            }
+                        }.start()
                     } else {
                         result.success(false)
                     }

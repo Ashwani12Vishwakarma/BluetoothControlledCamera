@@ -245,7 +245,6 @@ fun connect(address: String): String {
         "Error: ${e.message}"
     }
 }
-
     @SuppressLint("MissingPermission")
     fun pairDevice(address: String): Boolean {
         val device = bluetoothAdapter?.getRemoteDevice(address)
@@ -276,6 +275,23 @@ fun connect(address: String): String {
             String(buffer, 0, bytes)
         } catch (e: Exception) {
             null
+        }
+    }
+
+    fun disconnect() {
+        try {
+            inputStream?.close()
+            outputStream?.close()
+            socket?.close()
+            serverSocket?.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            inputStream = null
+            outputStream = null
+            socket = null
+            serverSocket = null
+            onCommandReceived?.invoke("DISCONNECTED")
         }
     }
 }

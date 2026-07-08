@@ -10,7 +10,7 @@ class TeleprompterController extends GetxController {
 
   ScrollController scrollController = ScrollController();
   Timer? _scrollTimer;
-  final double _scrollSpeed = 1.5; // Pixels per tick (50ms)
+  RxDouble scrollSpeed = 1.5.obs; // Pixels per tick (50ms)
 
   void setScript(String newTitle, String newText) {
     title.value = newTitle;
@@ -44,6 +44,10 @@ class TeleprompterController extends GetxController {
     _stopScrolling();
   }
 
+  void setSpeed(double speed) {
+    scrollSpeed.value = speed;
+  }
+
   void _startScrolling() {
     _scrollTimer?.cancel();
     _scrollTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
@@ -52,7 +56,7 @@ class TeleprompterController extends GetxController {
         final currentScroll = scrollController.offset;
         
         if (currentScroll < maxScroll) {
-          scrollController.jumpTo(currentScroll + _scrollSpeed);
+          scrollController.jumpTo(currentScroll + scrollSpeed.value);
         } else {
           // Reached the end, stop automatically
           pause();

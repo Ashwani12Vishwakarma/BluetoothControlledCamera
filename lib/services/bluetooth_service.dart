@@ -24,6 +24,10 @@ class BluetoothService {
     return await _channel.invokeMethod("connect", {"address": address});
   }
 
+  Future<void> disconnect() async {
+    await _channel.invokeMethod("disconnect");
+  }
+
   Future<bool> sendCommand(String cmd) async {
     try {
       final result = await _channel.invokeMethod("sendCommand", {

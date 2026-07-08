@@ -87,20 +87,13 @@ class HomeScreen extends StatelessWidget {
                                 return;
                               }
 
-                              final scan = await Permission.bluetoothScan
-                                  .request();
-                              final connect = await Permission.bluetoothConnect
-                                  .request();
                               final camera = await Permission.camera.request();
                               final mic = await Permission.microphone.request();
-                              final videos = await Permission.videos.request();
+
+                              await Permission.videos.request();
                               await Permission.storage.request();
 
-                              if (camera.isGranted &&
-                                  mic.isGranted &&
-                                  videos.isGranted &&
-                                  scan.isGranted &&
-                                  connect.isGranted) {
+                              if (camera.isGranted && mic.isGranted) {
                                 Get.to(() => const ReceiverScreen());
                               } else {
                                 Get.snackbar(
@@ -160,20 +153,11 @@ class HomeScreen extends StatelessWidget {
                                 );
                                 return;
                               }
-                              final scan = await Permission.bluetoothScan
-                                  .request();
-                              final connect = await Permission.bluetoothConnect
-                                  .request();
+                              await Permission.bluetoothScan.request();
+                              await Permission.bluetoothConnect.request();
+                              await Permission.location.request();
 
-                              if (scan.isGranted && connect.isGranted) {
-                                Get.to(() => const RemoteScreen());
-                              } else {
-                                Get.snackbar(
-                                  "Permission Required",
-                                  "Bluetooth permission is required.",
-                                  snackPosition: SnackPosition.BOTTOM,
-                                );
-                              }
+                              Get.to(() => const RemoteScreen());
                             },
                             child: const Text("Open Remote"),
                           ),

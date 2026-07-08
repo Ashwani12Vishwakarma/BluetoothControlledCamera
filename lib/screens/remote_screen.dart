@@ -1,6 +1,8 @@
+import 'package:bt_recorder/screens/scripts_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/bluetooth_controller.dart';
+import '../controllers/script_controller.dart';
 
 class RemoteScreen extends StatefulWidget {
   const RemoteScreen({super.key});
@@ -14,6 +16,7 @@ class _RemoteScreenState extends State<RemoteScreen> {
 
   final titleController = TextEditingController();
   final scriptController = TextEditingController();
+  final scriptData = Get.put(ScriptController());
 
   @override
   void initState() {
@@ -97,6 +100,13 @@ class _RemoteScreenState extends State<RemoteScreen> {
                                               ],
                                             ),
                                           ),
+                                          if (controller.isConnected.value)
+                                            IconButton(
+                                              icon: const Icon(Icons.link_off, color: Colors.red),
+                                              onPressed: () {
+                                                controller.disconnect();
+                                              },
+                                            ),
                                         ],
                                       ),
                                     ),
@@ -331,86 +341,186 @@ class _RemoteScreenState extends State<RemoteScreen> {
                           ),
                         ),
                       ),
-                      if (controller.isConnected.value)
-                        Card(
-                          margin: const EdgeInsets.only(top: 20),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Teleprompter",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
+                    if (controller.isConnected.value)
+                      Card(
+                        margin: const EdgeInsets.only(top: 20),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    "Teleprompter",
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 12),
-                                TextField(
-                                  controller: titleController,
-                                  decoration: const InputDecoration(
-                                    labelText: "Title",
-                                    border: OutlineInputBorder(),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                TextField(
-                                  controller: scriptController,
-                                  maxLines: 5,
-                                  decoration: const InputDecoration(
-                                    labelText: "Script",
-                                    border: OutlineInputBorder(),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton.icon(
-                                    icon: const Icon(Icons.send),
-                                    label: const Text("Send Script"),
+                                  TextButton.icon(
+                                    icon: const Icon(Icons.list),
+                                    label: const Text("Saved Scripts"),
                                     onPressed: () {
-                                      final t = titleController.text.trim();
-                                      final s = scriptController.text.trim();
-                                      if (t.isNotEmpty || s.isNotEmpty) {
-                                        final escapedScript = s.replaceAll('\n', '<br>');
-                                        controller.send("PROMPTER_TEXT|$t|$escapedScript");
-                                      }
+                                      Get.to(() => const ScriptsScreen())?.then(
+                                        (selectedScript) {
+                                          if (selectedScript != null) {
+                                            titleController.text =
+                                                selectedScript.title;
+                                            scriptController.text =
+                                                selectedScript.content;
+                                          }
+                                        },
+                                      );
                                     },
                                   ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              TextField(
+                                controller: titleController,
+                                decoration: const InputDecoration(
+                                  labelText: "Title",
+                                  border: OutlineInputBorder(),
                                 ),
-                                const SizedBox(height: 12),
-                                if (controller.isPrompterActive.value)
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.play_arrow),
-                                        color: controller.isPrompterPlaying.value ? Colors.grey : Colors.green,
-                                        onPressed: controller.isPrompterPlaying.value ? null : () {
-                                          controller.send("PROMPTER_PLAY");
-                                        },
+                              ),
+                              const SizedBox(height: 12),
+                              TextField(
+                                controller: scriptController,
+                                maxLines: 5,
+                                decoration: const InputDecoration(
+                                  labelText: "Script",
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  icon: const Icon(Icons.send),
+                                  label: const Text("Send Script to Receiver"),
+                                  onPressed: () {
+                                    final t = titleController.text.trim();
+                                    final s = scriptController.text.trim();
+                                    if (t.isNotEmpty || s.isNotEmpty) {
+                                      final escapedScript = s.replaceAll(
+                                        '\n',
+                                        '<br>',
+                                      );
+                                      controller.send(
+                                        "PROMPTER_TEXT|$t|$escapedScript",
+                                      );
+                                    }
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  icon: const Icon(Icons.save),
+                                  label: const Text("Save Current Script"),
+                                  onPressed: () {
+                                    final t = titleController.text.trim();
+                                    final s = scriptController.text.trim();
+                                    if (t.isNotEmpty && s.isNotEmpty) {
+                                      scriptData.addScript(t, s);
+                                      Get.snackbar(
+                                        "Saved",
+                                        "Script saved successfully",
+                                        snackPosition: SnackPosition.BOTTOM,
+                                      );
+                                    } else {
+                                      Get.snackbar(
+                                        "Error",
+                                        "Title and Script cannot be empty",
+                                        snackPosition: SnackPosition.BOTTOM,
+                                      );
+                                    }
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              if (controller.isPrompterActive.value)
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.play_arrow),
+                                          color:
+                                              controller.isPrompterPlaying.value
+                                              ? Colors.grey
+                                              : Colors.green,
+                                          onPressed:
+                                              controller.isPrompterPlaying.value
+                                              ? null
+                                              : () {
+                                                  controller.send(
+                                                    "PROMPTER_PLAY",
+                                                  );
+                                                },
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.pause),
+                                          color:
+                                              !controller
+                                                  .isPrompterPlaying
+                                                  .value
+                                              ? Colors.grey
+                                              : Colors.orange,
+                                          onPressed:
+                                              !controller
+                                                  .isPrompterPlaying
+                                                  .value
+                                              ? null
+                                              : () {
+                                                  controller.send(
+                                                    "PROMPTER_PAUSE",
+                                                  );
+                                                },
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.clear),
+                                          color: Colors.red,
+                                          onPressed: () {
+                                            controller.send("PROMPTER_CLEAR");
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    const Text(
+                                      "Scroll Speed",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                      IconButton(
-                                        icon: const Icon(Icons.pause),
-                                        color: !controller.isPrompterPlaying.value ? Colors.grey : Colors.orange,
-                                        onPressed: !controller.isPrompterPlaying.value ? null : () {
-                                          controller.send("PROMPTER_PAUSE");
-                                        },
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.clear),
-                                        color: Colors.red,
-                                        onPressed: () {
-                                          controller.send("PROMPTER_CLEAR");
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                              ],
-                            ),
+                                    ),
+                                    Slider(
+                                      value: controller.prompterSpeed.value,
+                                      min: 0.5,
+                                      max: 5.0,
+                                      divisions: 9,
+                                      label: controller.prompterSpeed.value
+                                          .toStringAsFixed(1),
+                                      onChanged: (val) {
+                                        controller.prompterSpeed.value = val;
+                                      },
+                                      onChangeEnd: (val) {
+                                        controller.send("PROMPTER_SPEED|$val");
+                                      },
+                                    ),
+                                  ],
+                                ),
+                            ],
                           ),
                         ),
+                      ),
                   ],
                 ),
               ),

@@ -59,10 +59,20 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
           final unescapedScript = parts.sublist(2).join("|").replaceAll('<br>', '\n');
           prompterController.setScript(parts[1], unescapedScript);
         }
+      } else if (command.startsWith("PROMPTER_SPEED|")) {
+        final parts = command.split("|");
+        if (parts.length >= 2) {
+          final speed = double.tryParse(parts[1]);
+          if (speed != null) {
+            prompterController.setSpeed(speed);
+          }
+        }
       }
     };
 
-    controller.startServer();
+    if (!controller.isConnected.value) {
+      controller.startServer();
+    }
     controller.listenCommands();
     if (!cameraController.isInitialized.value) {
       cameraController.initCamera();
@@ -93,6 +103,30 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
+                    if (controller.isTransferring.value)
+                      Card(
+                        elevation: 4,
+                        color: Colors.blue.shade50,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              const CircularProgressIndicator(),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Text(
+                                  controller.transferStatus.value,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     Card(
                       elevation: 4,
                       child: Padding(
@@ -236,36 +270,7 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
                 ),
               ),
             ),
-            if (controller.isTransferring.value)
-              Container(
-                color: Colors.black54,
-                child: Center(
-                  child: Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const CircularProgressIndicator(),
-                          const SizedBox(height: 20),
-                          Text(
-                            controller.transferStatus.value,
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 10),
-                          LinearProgressIndicator(
-                            value: controller.transferProgress.value / 100.0,
-                          ),
-                          const SizedBox(height: 8),
-                          Text("${controller.transferProgress.value}%"),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+
           ],
         );
       }),
