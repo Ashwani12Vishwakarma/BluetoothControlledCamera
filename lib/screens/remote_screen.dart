@@ -12,12 +12,22 @@ class RemoteScreen extends StatefulWidget {
 class _RemoteScreenState extends State<RemoteScreen> {
   final controller = Get.find<BluetoothController>();
 
+  final titleController = TextEditingController();
+  final scriptController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     controller.scan();
     controller.listenCommands();
     controller.autoReconnect();
+  }
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    scriptController.dispose();
+    super.dispose();
   }
 
   @override
@@ -321,6 +331,86 @@ class _RemoteScreenState extends State<RemoteScreen> {
                           ),
                         ),
                       ),
+                      if (controller.isConnected.value)
+                        Card(
+                          margin: const EdgeInsets.only(top: 20),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  "Teleprompter",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                TextField(
+                                  controller: titleController,
+                                  decoration: const InputDecoration(
+                                    labelText: "Title",
+                                    border: OutlineInputBorder(),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                TextField(
+                                  controller: scriptController,
+                                  maxLines: 5,
+                                  decoration: const InputDecoration(
+                                    labelText: "Script",
+                                    border: OutlineInputBorder(),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    icon: const Icon(Icons.send),
+                                    label: const Text("Send Script"),
+                                    onPressed: () {
+                                      final t = titleController.text.trim();
+                                      final s = scriptController.text.trim();
+                                      if (t.isNotEmpty || s.isNotEmpty) {
+                                        // Replace newlines with something safe or just let it send
+                                        controller.send("PROMPTER_TEXT|$t|$s");
+                                      }
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                if (controller.isPrompterActive.value)
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.play_arrow),
+                                        color: controller.isPrompterPlaying.value ? Colors.grey : Colors.green,
+                                        onPressed: controller.isPrompterPlaying.value ? null : () {
+                                          controller.send("PROMPTER_PLAY");
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.pause),
+                                        color: !controller.isPrompterPlaying.value ? Colors.grey : Colors.orange,
+                                        onPressed: !controller.isPrompterPlaying.value ? null : () {
+                                          controller.send("PROMPTER_PAUSE");
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.clear),
+                                        color: Colors.red,
+                                        onPressed: () {
+                                          controller.send("PROMPTER_CLEAR");
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
                   ],
                 ),
               ),
@@ -374,7 +464,10 @@ class _RemoteScreenState extends State<RemoteScreen> {
                         const SizedBox(height: 20),
                         Text(
                           controller.transferStatus.value,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 10),

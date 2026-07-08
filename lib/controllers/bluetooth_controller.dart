@@ -22,6 +22,12 @@ class BluetoothController extends GetxController {
   RxString recordingTime = "00:00".obs;
   RxInt selectedCamera = 0.obs;
 
+  // Teleprompter State (used primarily on Remote to track UI)
+  RxString prompterTitle = "".obs;
+  RxString prompterText = "".obs;
+  RxBool isPrompterActive = false.obs;
+  RxBool isPrompterPlaying = false.obs;
+
   // 0 = Rear
   // 1 = Front
 
@@ -327,6 +333,31 @@ class BluetoothController extends GetxController {
       case "CAMERA_REAR":
         selectedCamera.value = 0;
         break;
+
+      case "PROMPTER_PLAY":
+        isPrompterPlaying.value = true;
+        break;
+
+      case "PROMPTER_PAUSE":
+        isPrompterPlaying.value = false;
+        break;
+
+      case "PROMPTER_CLEAR":
+        isPrompterActive.value = false;
+        isPrompterPlaying.value = false;
+        prompterTitle.value = "";
+        prompterText.value = "";
+        break;
+    }
+
+    if (cmd.startsWith("PROMPTER_TEXT|")) {
+      final parts = cmd.split("|");
+      if (parts.length >= 3) {
+        prompterTitle.value = parts[1];
+        prompterText.value = parts.sublist(2).join("|");
+        isPrompterActive.value = true;
+        isPrompterPlaying.value = false;
+      }
     }
   }
 

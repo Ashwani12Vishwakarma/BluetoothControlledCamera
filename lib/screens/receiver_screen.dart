@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/bluetooth_controller.dart';
 import '../controllers/camera_controller.dart';
+import '../controllers/teleprompter_controller.dart';
 
 class ReceiverScreen extends StatefulWidget {
   const ReceiverScreen({super.key});
@@ -14,6 +15,7 @@ class ReceiverScreen extends StatefulWidget {
 class _ReceiverScreenState extends State<ReceiverScreen> {
   final controller = Get.find<BluetoothController>();
   final cameraController = Get.put(CameraControllerX());
+  final prompterController = Get.put(TeleprompterController());
   Worker? commandWorker;
 
   @override
@@ -45,6 +47,17 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
         if (filePath != null) {
           controller.sendFile(filePath);
         }
+      } else if (command == "PROMPTER_PLAY") {
+        prompterController.play();
+      } else if (command == "PROMPTER_PAUSE") {
+        prompterController.pause();
+      } else if (command == "PROMPTER_CLEAR") {
+        prompterController.clear();
+      } else if (command.startsWith("PROMPTER_TEXT|")) {
+        final parts = command.split("|");
+        if (parts.length >= 3) {
+          prompterController.setScript(parts[1], parts.sublist(2).join("|"));
+        }
       }
     };
 
@@ -58,6 +71,7 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
   @override
   void dispose() {
     Get.delete<CameraControllerX>();
+    Get.delete<TeleprompterController>();
     commandWorker?.dispose();
     super.dispose();
   }
@@ -121,7 +135,50 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
                     Expanded(
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(15),
-                        child: CameraPreview(cameraController.cameraController!),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            CameraPreview(cameraController.cameraController!),
+                            Obx(() {
+                              if (!prompterController.isActive.value) return const SizedBox.shrink();
+                              return Container(
+                                color: Colors.black54,
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                                child: Column(
+                                  children: [
+                                    if (prompterController.title.value.isNotEmpty)
+                                      Text(
+                                        prompterController.title.value,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    if (prompterController.title.value.isNotEmpty)
+                                      const SizedBox(height: 24),
+                                    Expanded(
+                                      child: SingleChildScrollView(
+                                        controller: prompterController.scrollController,
+                                        child: Text(
+                                          prompterController.text.value,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 42,
+                                            height: 1.5,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
                       ),
                     ),
 
