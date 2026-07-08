@@ -56,7 +56,8 @@ class _ReceiverScreenState extends State<ReceiverScreen> {
       } else if (command.startsWith("PROMPTER_TEXT|")) {
         final parts = command.split("|");
         if (parts.length >= 3) {
-          prompterController.setScript(parts[1], parts.sublist(2).join("|"));
+          final unescapedScript = parts.sublist(2).join("|").replaceAll('<br>', '\n');
+          prompterController.setScript(parts[1], unescapedScript);
         }
       }
     };

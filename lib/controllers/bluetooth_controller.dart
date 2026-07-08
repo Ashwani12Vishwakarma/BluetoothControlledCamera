@@ -354,7 +354,7 @@ class BluetoothController extends GetxController {
       final parts = cmd.split("|");
       if (parts.length >= 3) {
         prompterTitle.value = parts[1];
-        prompterText.value = parts.sublist(2).join("|");
+        prompterText.value = parts.sublist(2).join("|").replaceAll('<br>', '\n');
         isPrompterActive.value = true;
         isPrompterPlaying.value = false;
       }

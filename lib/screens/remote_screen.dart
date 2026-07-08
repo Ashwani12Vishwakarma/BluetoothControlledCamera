@@ -373,8 +373,8 @@ class _RemoteScreenState extends State<RemoteScreen> {
                                       final t = titleController.text.trim();
                                       final s = scriptController.text.trim();
                                       if (t.isNotEmpty || s.isNotEmpty) {
-                                        // Replace newlines with something safe or just let it send
-                                        controller.send("PROMPTER_TEXT|$t|$s");
+                                        final escapedScript = s.replaceAll('\n', '<br>');
+                                        controller.send("PROMPTER_TEXT|$t|$escapedScript");
                                       }
                                     },
                                   ),
