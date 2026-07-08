@@ -25,8 +25,9 @@ class ScriptController extends GetxController {
 
   Future<void> _saveToPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    final List<Map<String, dynamic>> mapList =
-        savedScripts.map((s) => s.toMap()).toList();
+    final List<Map<String, dynamic>> mapList = savedScripts
+        .map((s) => s.toMap())
+        .toList();
     await prefs.setString('teleprompter_scripts', json.encode(mapList));
   }
 
@@ -39,7 +40,7 @@ class ScriptController extends GetxController {
     savedScripts.add(newScript);
     _saveToPrefs();
   }
-  
+
   void updateScript(String id, String newTitle, String newContent) {
     final index = savedScripts.indexWhere((s) => s.id == id);
     if (index != -1) {

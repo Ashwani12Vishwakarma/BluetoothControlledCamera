@@ -5,6 +5,7 @@ import '../controllers/bluetooth_controller.dart';
 import 'receiver_screen.dart';
 import 'remote_screen.dart';
 import 'recorded_videos_screen.dart';
+import 'scripts_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
@@ -17,6 +18,11 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text("Bluetooth Camera Remote"),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.description),
+            tooltip: "Teleprompter Scripts",
+            onPressed: () => Get.to(() => const ScriptsScreen()),
+          ),
           IconButton(
             icon: const Icon(Icons.video_library),
             tooltip: "Recorded Media",

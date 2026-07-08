@@ -12,7 +12,7 @@ class ScriptsScreen extends StatefulWidget {
 }
 
 class _ScriptsScreenState extends State<ScriptsScreen> {
-  final ScriptController scriptData = Get.find<ScriptController>();
+  final ScriptController scriptData = Get.put(ScriptController());
 
   void _showAddEditDialog([TeleprompterScript? script]) {
     final titleController = TextEditingController(text: script?.title ?? '');

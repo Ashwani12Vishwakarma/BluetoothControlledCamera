@@ -136,6 +136,24 @@ class _ScriptPreviewScreenState extends State<ScriptPreviewScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       FloatingActionButton(
+                        heroTag: "preview_record",
+                        backgroundColor: cameraController.isRecording.value ? Colors.red : Colors.grey[800],
+                        onPressed: () async {
+                          if (cameraController.isRecording.value) {
+                            await cameraController.stopRecording();
+                            Get.snackbar(
+                              "Saved",
+                              "Video saved to gallery",
+                              snackPosition: SnackPosition.BOTTOM,
+                            );
+                          } else {
+                            await cameraController.startRecording();
+                          }
+                        },
+                        child: Icon(cameraController.isRecording.value ? Icons.stop : Icons.fiber_manual_record, color: Colors.white),
+                      ),
+                      const SizedBox(width: 20),
+                      FloatingActionButton(
                         heroTag: "preview_play",
                         backgroundColor: prompterController.isPlaying.value ? Colors.orange : Colors.green,
                         onPressed: () {
